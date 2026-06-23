@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>삐까뚱씨 월드 굿즈런: 4개국 어드벤처</title>
+  <style>
+    :root{
+      --panel:rgba(12,19,29,.92);--line:rgba(255,255,255,.18);--text:#fff;
+      --accent:#ffdb42;--good:#65ec98;--danger:#ff5f62;--power:#fff36a;
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#99d8ff;color:var(--text);font-family:Arial,"Noto Sans KR",sans-serif;touch-action:none}
+    canvas{display:block;width:100%;height:100%}.hidden{display:none!important}button,input{font:inherit}
+    #game{position:fixed;inset:0}
+
+    .screen{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;padding:16px;background:linear-gradient(rgba(20,35,50,.24),rgba(5,10,17,.78))}
+    .panel{width:min(96vw,780px);max-height:94vh;overflow:auto;padding:22px;background:var(--panel);border:3px solid var(--line);border-radius:22px;box-shadow:0 22px 70px rgba(0,0,0,.5)}
+    h1{margin:0 0 5px;font-size:clamp(30px,6vw,54px);line-height:1.05}.subtitle{margin:0 0 14px;color:#d8e5ee;font-weight:800}
+    .stageGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}.stageCard,.charCard{position:relative;border:2px solid var(--line);border-radius:14px;background:rgba(255,255,255,.07);color:#fff;padding:13px;text-align:left;cursor:pointer}
+    .stageCard{min-height:105px}.stageCard b,.charCard b{display:block;font-size:17px;margin-bottom:6px}.stageCard small,.charCard small{display:block;color:#d7e4ea;line-height:1.4}.stageCard.selected,.charCard.selected{border-color:var(--accent);background:rgba(255,219,66,.14);box-shadow:0 0 0 2px rgba(255,219,66,.12)}.stageCard.locked{opacity:.5;cursor:not-allowed}
+    .badge{position:absolute;right:8px;top:8px;background:rgba(0,0,0,.52);border-radius:999px;padding:3px 7px;font-size:11px;font-weight:900}
+    .course{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0 14px}.course span{min-height:60px;display:flex;align-items:center;justify-content:center;text-align:center;padding:5px;border-radius:10px;background:rgba(255,255,255,.08);font-weight:900;font-size:12px}
+    .charTitle{margin:15px 0 7px;font-size:16px}.charGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.charCard{min-height:132px}.avatar{position:relative;overflow:hidden;float:left;width:57px;height:74px;margin-right:10px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:35px;border:2px solid rgba(255,255,255,.2)}.avatar.brody{background:#332b32}.avatar.noah{background:#e8edf2;color:#1b2830}.avatar.noah::before{content:'';position:absolute;left:7px;right:7px;top:5px;height:18px;border-radius:12px 12px 6px 6px;background:#6b3f25;box-shadow:0 3px 0 rgba(0,0,0,.15)}
+    .stat{display:grid;grid-template-columns:54px 1fr 27px;gap:6px;align-items:center;margin-top:5px;font-size:11px;font-weight:800}.bar{height:7px;border-radius:999px;background:rgba(255,255,255,.13);overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#4cc7ff,#ffdc42)}
+    label{display:block;margin:13px 0 5px;font-weight:900}input{width:100%;padding:12px 13px;border:0;border-radius:10px;font-size:17px;font-weight:900;color:#15202a}
+    .mainbtn,.subbtn{border:0;border-radius:12px;padding:13px 15px;font-weight:1000;cursor:pointer}.mainbtn{width:100%;margin-top:10px;background:var(--accent);color:#272000;font-size:20px;box-shadow:0 5px 0 #b18e00}.mainbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #b18e00}.subbtn{background:#e9f1f5;color:#17242d}
+    .guide{margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(255,219,66,.11);border:1px solid rgba(255,219,66,.35);font-size:13px;font-weight:800;line-height:1.5}.tips{font-size:12px;line-height:1.55;color:#d3e1e8;margin:12px 0 0}
+    .rank{margin-top:15px;border-top:1px solid var(--line);padding-top:12px}.rank h3{margin:0 0 7px}.rank ol{margin:0;padding-left:26px;line-height:1.7}.record{display:flex;justify-content:space-between;gap:10px}.record em{font-style:normal;color:#ffe66b;font-weight:900}
+
+    #hud{position:fixed;inset:0;z-index:15;pointer-events:none}.topbar{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;gap:8px}.hudbox{background:rgba(0,0,0,.58);border:2px solid rgba(255,255,255,.2);border-radius:12px;padding:8px 11px;backdrop-filter:blur(5px);box-shadow:0 5px 20px rgba(0,0,0,.24)}#time{font-size:29px;font-weight:1000;text-align:center;min-width:124px}#time.danger{color:#ff6a64;animation:pulse .55s infinite alternate}@keyframes pulse{to{transform:scale(1.08)}}#section{font-size:13px;font-weight:900}#stats{font-size:12px;line-height:1.55;text-align:right;min-width:145px}#restartBtn,#homeBtn{pointer-events:auto;width:100%;border:0;border-radius:8px;padding:6px;margin-top:5px;font-size:11px;font-weight:900}#restartBtn{background:#f1f4f6}#homeBtn{background:#ffdb42}
+    #progressWrap{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(43vw,520px);height:15px;border:2px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(0,0,0,.5);overflow:hidden}#progress{height:100%;width:0;background:linear-gradient(90deg,#62e47c,#ffe04b,#ff8142)}
+    #starPanel{position:absolute;left:50%;top:38px;transform:translateX(-50%);width:min(43vw,520px);display:flex;gap:7px;align-items:center}.starText{font-size:13px;font-weight:1000;text-shadow:0 2px 5px #000}.powerBar{height:12px;flex:1;border-radius:999px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.28);overflow:hidden}.powerFill{height:100%;width:0;background:linear-gradient(90deg,#fff36a,#ffb62f,#fff)}#powerState{font-size:12px;font-weight:1000;color:#fff36a;text-shadow:0 2px 5px #000;min-width:102px;text-align:right}
+    #message{position:absolute;left:50%;top:37%;transform:translate(-50%,-50%);font-size:clamp(42px,9vw,88px);font-weight:1000;text-align:center;text-shadow:0 5px 0 #18222b,0 10px 30px rgba(0,0,0,.55);white-space:nowrap}#toast{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);padding:10px 17px;border-radius:999px;background:rgba(0,0,0,.78);font-weight:900;opacity:0;transition:.2s;white-space:nowrap}#toast.show{opacity:1}
+
+    #pickpocket{position:fixed;inset:0;z-index:35;display:flex;align-items:center;justify-content:center;background:rgba(10,8,13,.58);pointer-events:none}.pickCard{width:min(88vw,470px);padding:22px;border-radius:22px;background:rgba(39,17,24,.96);border:4px solid #ff5f62;text-align:center;box-shadow:0 20px 70px rgba(0,0,0,.55)}.pickCard h2{font-size:34px;margin:0 0 7px}.pickCard p{margin:5px 0;font-weight:900}.pickBar{height:24px;border-radius:999px;background:#20171b;border:2px solid rgba(255,255,255,.25);overflow:hidden;margin:14px 0}.pickFill{height:100%;width:0;background:linear-gradient(90deg,#ff574d,#ffd84a,#64eb8e)}#pickTimer{font-size:30px;color:#ffd84a;font-weight:1000}
+
+    #mobileControls{position:fixed;inset:0;z-index:25;pointer-events:none;display:none}#stickBase{position:absolute;left:22px;bottom:25px;width:132px;height:132px;border-radius:50%;background:rgba(0,0,0,.28);border:3px solid rgba(255,255,255,.42);pointer-events:auto}#stick{position:absolute;left:36px;top:36px;width:58px;height:58px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 3px 12px rgba(0,0,0,.35)}#actionBtn{position:absolute;right:22px;bottom:28px;width:116px;height:116px;border-radius:50%;border:3px solid rgba(255,255,255,.55);background:rgba(255,211,54,.83);color:#302400;font-size:19px;font-weight:1000;pointer-events:auto;box-shadow:0 6px 22px rgba(0,0,0,.32)}#actionBtn.pick{background:rgba(255,74,79,.9);color:#fff;animation:pulse .25s infinite alternate}
+    .resultTime{font-size:48px;color:var(--accent);font-weight:1000;text-align:center;margin:12px 0}.resultGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.resultGrid div{padding:11px;border-radius:10px;background:rgba(255,255,255,.08);text-align:center}.resultGrid b{display:block;font-size:20px;margin-top:4px}.resultBtns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    @media(hover:none),(pointer:coarse){#mobileControls{display:block}.pcOnly{display:none}}
+    @media(max-width:700px){.panel{padding:16px}.stageGrid{grid-template-columns:1fr}.charGrid{grid-template-columns:1fr}.topbar{top:6px;left:6px;right:6px}.hudbox{padding:6px 8px}#time{font-size:23px;min-width:102px}#stats{font-size:11px;min-width:116px}#progressWrap{top:58px;width:72vw}#starPanel{top:79px;width:74vw}#toast{bottom:170px}.course{grid-template-columns:repeat(5,1fr)}.course span{font-size:10px}}
+  </style>
+</head>
+<body>
+<div id="game"></div>
+
+<div id="hud" class="hidden">
+  <div class="topbar">
+    <div class="hudbox"><div id="section">출발</div><div id="time">01:15.0</div></div>
+    <div id="progressWrap"><div id="progress"></div></div>
+    <div id="starPanel"><span id="starCount" class="starText">⭐ 0/6</span><div class="powerBar"><div id="powerFill" class="powerFill"></div></div><span id="powerState">실드 준비 중</span></div>
+    <div id="stats" class="hudbox">캐릭터 <b id="hudCharacter">브로디</b><br>속도 <b id="speed">0.0</b> · 충돌 <b id="hits">0</b><br>낙하 <b id="falls">0</b> · 탈출 <b id="escapes">0</b><button id="restartBtn">다시 시작</button><button id="homeBtn">처음 화면</button></div>
+  </div>
+  <div id="message"></div><div id="toast"></div>
+</div>
+
+<div id="pickpocket" class="hidden">
+  <div class="pickCard"><h2>🕵️ 소매치기다!</h2><p>스페이스바 또는 오른쪽 버튼을 빠르게 연타해 떼어내세요!</p><div class="pickBar"><div id="pickFill" class="pickFill"></div></div><div><b id="pickTap">0 / 8</b> · 남은 시간 <span id="pickTimer">4.0</span>초</div></div>
+</div>
+
+<div id="menu" class="screen">
+  <div class="panel">
+    <h1>✨ 삐까뚱씨 월드 굿즈런</h1><p id="menuSubtitle" class="subtitle">STAGE 1 · 도쿄 · 제한시간 75초</p>
+    <div class="stageGrid">
+      <button id="stage1" class="stageCard selected"><span class="badge">STAGE 1</span><b>🇯🇵 도쿄</b><small>시부야 교차로·도쿄역 환승 계단·오다이바 전철 발판</small></button>
+      <button id="stage2" class="stageCard"><span id="badge2" class="badge">✅ STAGE 2</span><b>🇹🇭 방콕</b><small>카오산로드·담넌사두억 수상시장·짜오프라야 보트</small></button>
+      <button id="stage3" class="stageCard"><span id="badge3" class="badge">✅ STAGE 3</span><b>🇫🇮 핀란드</b><small>헬싱키 얼음거리·수오멘린나 빙판·원로원광장 눈덩이</small></button>
+      <button id="stage4" class="stageCard"><span id="badge4" class="badge">✅ STAGE 4</span><b>🇪🇸 바르셀로나</b><small>람블라스 인파 미로·구엘 공원 극한 계단·캄 노우 이중 레이저</small></button>
+    </div>
+    <div id="course" class="course"></div>
+    <div id="unlockGuide" class="guide">🧪 테스트 모드: 모든 여행지가 처음부터 열려 있습니다.</div>
+
+    <div class="charTitle"><b>플레이 캐릭터</b></div>
+    <div class="charGrid">
+      <button id="brodyCard" class="charCard selected">
+        <div class="avatar brody">●</div><b>브로디</b><small>충돌과 소매치기에 강하다.</small>
+        <div class="stat"><span>속도</span><div class="bar"><i style="width:64%"></i></div><b>3</b></div><div class="stat"><span>점프</span><div class="bar"><i style="width:60%"></i></div><b>3</b></div><div class="stat"><span>버티기</span><div class="bar"><i style="width:100%"></i></div><b>5</b></div>
+      </button>
+      <button id="noahCard" class="charCard">
+        <div class="avatar noah">●</div><b>노아</b><small>빠르고 점프력이 높다.</small>
+        <div class="stat"><span>속도</span><div class="bar"><i style="width:100%"></i></div><b>5</b></div><div class="stat"><span>점프</span><div class="bar"><i style="width:88%"></i></div><b>4</b></div><div class="stat"><span>버티기</span><div class="bar"><i style="width:45%"></i></div><b>2</b></div>
+      </button>
+    </div>
+    <label for="nickname">닉네임</label><input id="nickname" maxlength="12" value="러너" autocomplete="off" />
+    <button id="startBtn" class="mainbtn">도쿄 굿즈런 시작</button>
+    <div class="guide">⭐ 별 6개를 모으면 6초 동안 <b>뻔쩍 실드</b>가 발동해 사람·장애물·굴러오는 물체·소매치기를 막아줍니다. 낙사는 막을 수 없습니다.</div>
+    <p class="tips"><span class="pcOnly">PC: W/A/S/D 또는 방향키 이동 · Space 점프 · 소매치기 발생 시 Space 연타<br></span>태블릿: 왼쪽 스틱 이동 · 오른쪽 버튼 점프/소매치기 연타</p>
+    <div class="rank"><h3 id="rankTitle">🏆 도쿄 TOP 5 · 남은 시간 순</h3><ol id="rankList"></ol></div>
+  </div>
+</div>
+
+<div id="result" class="screen hidden">
+  <div class="panel"><h1 id="resultTitle" style="text-align:center">굿즈 구매 성공!</h1><div id="resultMap" style="text-align:center;font-weight:900;color:#d9e8ef"></div><div id="resultTime" class="resultTime"></div><div id="resultGuide" class="guide"></div>
+    <div class="resultGrid"><div>별 획득<b id="resultStars">0개</b></div><div>뻔쩍 실드<b id="resultPowers">0회</b></div><div>충돌·낙하<b id="resultMistakes">0회</b></div><div>랭킹<b id="resultRank">-</b></div></div>
+    <div class="resultBtns"><button id="retryBtn" class="mainbtn">다시 도전</button><button id="menuBtn" class="subbtn" style="margin-top:10px">메인 화면</button></div>
+    <div class="rank"><h3 id="resultRankTitle">🏆 TOP 5</h3><ol id="resultRankList"></ol></div>
+  </div>
+</div>
+
+<div id="mobileControls" class="hidden"><div id="stickBase"><div id="stick"></div></div><button id="actionBtn">JUMP</button></div>
+
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js';
+import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/12.7.0/firebase-auth.js';
+import {
+  getFirestore, collection, doc, getDoc, getDocs, limit, orderBy, query,
+  serverTimestamp, setDoc
+} from 'https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: 'AIzaSyBEG9B48lFY7cy6dhi27GmQwE-RTBF6KrU',
+  authDomain: 'pkdc-4b341.firebaseapp.com',
+  projectId: 'pkdc-4b341',
+  storageBucket: 'pkdc-4b341.firebasestorage.app',
+  messagingSenderId: '428720415775',
+  appId: '1:428720415775:web:7103b4c82e59947640212a',
+  measurementId: 'G-1ZS1VY61RH'
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const firebaseAuth = getAuth(firebaseApp);
+const firebaseDb = getFirestore(firebaseApp);
+let firebaseUser = null;
+let firebaseOffline = false;
+const firebaseReady = (async () => {
+  try {
+    const credential = await signInAnonymously(firebaseAuth);
+    firebaseUser = credential.user;
+    return true;
+  } catch (error) {
+    firebaseOffline = true;
+    console.warn('Firebase 익명 로그인 실패. 로컬 랭킹으로 실행합니다.', error);
+    return false;
+  }
+})();
+
+const STAR_GOAL=6, POWER_DURATION=6000, GRAVITY=22;
+const SAVE_KEYS={1:'pkdcTravelAdventureTop5TokyoV2',2:'pkdcTravelAdventureTop5BangkokV2',3:'pkdcTravelAdventureTop5FinlandV1',4:'pkdcTravelAdventureTop5BarcelonaV2'};
+const UNLOCK_KEYS={2:'pkdcTravelAdventureBangkokUnlockedV1',3:'pkdcTravelAdventureFinlandUnlockedV1',4:'pkdcTravelAdventureBarcelonaStage4UnlockedV1'};
+const CHARACTERS={
+  brody:{id:'brody',name:'브로디',skin:0x4b3028,hair:0x17191c,body:0x244f8f,pants:0x1c2743,speed:8.7,lateral:6.4,jump:8.5,halfX:.46,halfZ:.42,collisionPenalty:1.3,pickTaps:7,bodyW:1.12,bodyH:1.08,bodyD:.88,head:.82},
+  noah:{id:'noah',name:'노아',skin:0xf3d7c2,hair:0x6b3f25,body:0xe9eef2,pants:0x526477,speed:10.0,lateral:7.4,jump:9.4,halfX:.31,halfZ:.34,collisionPenalty:2.3,pickTaps:10,bodyW:.70,bodyH:1.14,bodyD:.62,head:.68}
+};
+const MAPS={
+  1:{id:1,city:'도쿄',name:'도쿄 벚꽃 한정 인형',centerX:0,finishZ:326,totalZ:326,timeLimit:75,sky:0x91d3ff,fog:0xb9dcf0,checkpoints:[{x:0,y:1.4,z:2},{x:0,y:1.4,z:70},{x:0,y:1.4,z:134},{x:0,y:1.4,z:218},{x:0,y:1.4,z:284}],sections:[[70,'시부야 스크램블 교차로'],[142,'도쿄역 환승 계단'],[218,'오다이바 전철 발판'],[284,'긴자 여행가방 거리'],[Infinity,'도쿄 팝업스토어']],preview:['🚦 시부야<br>교차로','🧱 도쿄역<br>환승 계단','🚇 오다이바<br>전철 발판','🧳 긴자<br>가방 거리','🛍️ 도쿄<br>팝업스토어']},
+  2:{id:2,city:'방콕',name:'방콕 코끼리 한정 모자',centerX:140,finishZ:388,totalZ:388,timeLimit:92,sky:0xffbc77,fog:0xe9a564,checkpoints:[{x:140,y:1.4,z:2},{x:140,y:1.4,z:106},{x:140,y:1.4,z:174},{x:140,y:1.4,z:248},{x:140,y:1.4,z:300}],sections:[[106,'카오산로드'],[174,'담넌사두억 수상시장'],[248,'짜오프라야 이동 보트'],[300,'왓아룬 선착장'],[Infinity,'아이콘시암 팝업스토어']],preview:['🏮 카오산<br>로드','🛶 담넌사두억<br>수상시장','🚤 짜오프라야<br>이동 보트','🛕 왓아룬<br>선착장','🛍️ 아이콘시암<br>팝업']},
+  3:{id:3,city:'핀란드',name:'핀란드 오로라 한정 후드',centerX:280,finishZ:398,totalZ:398,timeLimit:96,sky:0xbcecff,fog:0xa9d9ef,slippery:true,checkpoints:[{x:280,y:1.4,z:2},{x:280,y:1.4,z:82},{x:280,y:1.4,z:162},{x:280,y:1.4,z:248},{x:280,y:1.4,z:326}],sections:[[82,'헬싱키 마켓 광장'],[162,'에스플라나디 얼음거리'],[248,'수오멘린나 빙판 항로'],[326,'원로원광장 눈덩이'],[Infinity,'헬싱키 오로라 팝업']],preview:['❄️ 헬싱키<br>마켓 광장','🧊 에스플라나디<br>얼음거리','⛴️ 수오멘린나<br>빙판 항로','⚪ 원로원광장<br>눈덩이','🌌 헬싱키<br>오로라 팝업']},
+  4:{id:4,city:'바르셀로나',name:'바르셀로나 한정 축구 유니폼',centerX:420,finishZ:458,totalZ:458,timeLimit:96,sky:0x93d9ff,fog:0xc8e7f3,checkpoints:[{x:420,y:1.4,z:2},{x:420,y:1.4,z:96},{x:420,y:5.65,z:194},{x:420,y:1.4,z:300},{x:420,y:1.4,z:394}],sections:[[96,'람블라스 인파 미로'],[194,'구엘 공원 극한 계단'],[300,'사그라다 파밀리아 공중 발판'],[394,'캄 노우 이중 레이저 광장'],[Infinity,'고딕 지구 최종 탈출']],preview:['🌴 람블라스<br>인파 미로','🪜 구엘 공원<br>극한 계단','⛪ 사그라다<br>공중 발판','🔴 캄 노우<br>이중 레이저','🏰 고딕 지구<br>최종 탈출']}};
+
+const ui={
+  hud:document.getElementById('hud'),menu:document.getElementById('menu'),result:document.getElementById('result'),pick:document.getElementById('pickpocket'),
+  time:document.getElementById('time'),section:document.getElementById('section'),progress:document.getElementById('progress'),speed:document.getElementById('speed'),hits:document.getElementById('hits'),falls:document.getElementById('falls'),escapes:document.getElementById('escapes'),hudCharacter:document.getElementById('hudCharacter'),message:document.getElementById('message'),toast:document.getElementById('toast'),
+  starCount:document.getElementById('starCount'),powerFill:document.getElementById('powerFill'),powerState:document.getElementById('powerState'),pickFill:document.getElementById('pickFill'),pickTap:document.getElementById('pickTap'),pickTimer:document.getElementById('pickTimer'),
+  menuSubtitle:document.getElementById('menuSubtitle'),course:document.getElementById('course'),unlockGuide:document.getElementById('unlockGuide'),nickname:document.getElementById('nickname'),startBtn:document.getElementById('startBtn'),rankTitle:document.getElementById('rankTitle'),rankList:document.getElementById('rankList'),
+  resultTitle:document.getElementById('resultTitle'),resultMap:document.getElementById('resultMap'),resultTime:document.getElementById('resultTime'),resultGuide:document.getElementById('resultGuide'),resultStars:document.getElementById('resultStars'),resultPowers:document.getElementById('resultPowers'),resultMistakes:document.getElementById('resultMistakes'),resultRank:document.getElementById('resultRank'),resultRankTitle:document.getElementById('resultRankTitle'),resultRankList:document.getElementById('resultRankList'),
+  stage1:document.getElementById('stage1'),stage2:document.getElementById('stage2'),stage3:document.getElementById('stage3'),stage4:document.getElementById('stage4'),badge2:document.getElementById('badge2'),badge3:document.getElementById('badge3'),badge4:document.getElementById('badge4'),brodyCard:document.getElementById('brodyCard'),noahCard:document.getElementById('noahCard'),actionBtn:document.getElementById('actionBtn')
+};
+
+const scene=new THREE.Scene();scene.background=new THREE.Color(MAPS[1].sky);scene.fog=new THREE.Fog(MAPS[1].fog,65,160);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,500);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;document.getElementById('game').appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xeefaff,0x6b5038,2.1));const sun=new THREE.DirectionalLight(0xffffff,2.5);sun.position.set(-24,48,-20);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-28;sun.shadow.camera.right=28;sun.shadow.camera.top=40;sun.shadow.camera.bottom=-30;scene.add(sun);scene.add(sun.target);
+
+const mat=(color,opts={})=>new THREE.MeshLambertMaterial({color,...opts});
+const mats={road:mat(0x46505b),stone:mat(0x777d82),stone2:mat(0x5f676d),wood:mat(0x8a5a2b),dark:mat(0x302a2a),yellow:mat(0xf2ca3b),red:mat(0xd84b43),blue:mat(0x3f83ca),green:mat(0x49a765),sand:mat(0xd4a65c),snow:mat(0xf3f8ff),ice:new THREE.MeshPhongMaterial({color:0x8edfff,transparent:true,opacity:.90,shininess:125}),iceDark:new THREE.MeshPhongMaterial({color:0x3e9fc8,transparent:true,opacity:.93,shininess:105}),water:new THREE.MeshPhongMaterial({color:0x3b9ed8,transparent:true,opacity:.75,shininess:95}),gold:new THREE.MeshPhongMaterial({color:0xffdc39,emissive:0x855a00,shininess:120}),laser:new THREE.MeshPhongMaterial({color:0xff3028,emissive:0xc9140b,transparent:true,opacity:.94,shininess:130}),portal:new THREE.MeshPhongMaterial({color:0xdd52ff,emissive:0x5f1280,transparent:true,opacity:.9}),black:mat(0x17191c),white:mat(0xf0f1f1),pink:mat(0xe94f8f),orange:mat(0xe87931)};
+const platforms=[],hazards=[],rollers=[],lasers=[],stars=[],pickpockets=[],decor=[];
+function cube(x,y,z,w,h,d,material,parent=scene,cast=true){const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=cast;mesh.receiveShadow=true;parent.add(mesh);return mesh}
+function addPlatform(mapId,x,y,z,w,h,d,material,opts={}){const mesh=cube(x,y,z,w,h,d,material,scene,opts.cast!==false);const p={mapId,mesh,x,y,z,w,h,d,original:{x,y,z},moving:opts.moving||null,delta:{x:0,y:0,z:0}};platforms.push(p);return p}
+function addHazard(mapId,x,y,z,w,h,d,material,opts={}){const mesh=cube(x,y,z,w,h,d,material);const hzd={mapId,mesh,x,y,z,w,h,d,original:{x,y,z},moving:opts.moving||null,type:opts.type||'normal'};hazards.push(hzd);return hzd}
+function addRoller(mapId,x,zStart,zEnd,y,radius,speed,delay,material){const mesh=new THREE.Mesh(new THREE.SphereGeometry(radius,22,16),material);mesh.castShadow=true;mesh.receiveShadow=true;scene.add(mesh);const r={mapId,mesh,x,zStart,zEnd,y,radius,speed,delay,z:zStart,w:radius*1.7,h:radius*1.7,d:radius*1.7};rollers.push(r);return r}
+function addLaserProjectile(mapId,cx,z,y=1.15,phase=0,speed=8.5,fromLeft=true){const beam=cube(cx+(fromLeft?-10:10),y,z,3.1,.28,.48,mats.laser,scene,false);const glow=cube(0,0,0,2.4,.08,.16,new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.9}),beam,false);lasers.push({mapId,mesh:beam,cx,z,y,w:3.1,h:.28,d:.48,phase,speed,fromLeft,x:beam.position.x});return beam}
+function addStar(mapId,x,y,z){const mesh=new THREE.Mesh(new THREE.OctahedronGeometry(.48,0),mats.gold);mesh.position.set(x,y,z);mesh.castShadow=true;scene.add(mesh);stars.push({mapId,mesh,x,y,z,collected:false})}
+function addPickpocket(mapId,x,z,amp=3.5,phase=0){const group=new THREE.Group();group.position.set(x,1.35,z);const h=mat(0x25222a);cube(0,0,0,.78,1.15,.7,h,group,true);cube(0,.92,0,.66,.66,.66,mat(0xb47d62),group,true);cube(-.2,-.78,0,.25,.58,.34,mats.dark,group,true);cube(.2,-.78,0,.25,.58,.34,mats.dark,group,true);cube(.44,.2,.05,.3,.55,.26,mats.black,group,true);scene.add(group);pickpockets.push({mapId,mesh:group,x,y:1.35,z,w:.9,h:1.85,d:.8,originalX:x,amp,phase,speed:1.1,active:true})}
+function sign(text,x,y,z,bg='#26354c',fg='#fff',sx=5.2){const c=document.createElement('canvas');c.width=768;c.height=192;const g=c.getContext('2d');g.fillStyle=bg;g.fillRect(0,0,768,192);g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=10;g.strokeRect(7,7,754,178);g.fillStyle=fg;g.font='900 66px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(text,384,99);const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;const s=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true}));s.position.set(x,y,z);s.scale.set(sx,1.45,1);scene.add(s);decor.push(s)}
+function building(cx,side,z,color,label=''){const w=5.5,h=8+((z/13)%4)*1.5,x=cx+side*14;cube(x,h/2-.5,z,w,h,13,mat(color),scene,false);for(let yy=2;yy<h-1;yy+=2.4)for(let zz=z-5;zz<z+5;zz+=2.2)cube(x-side*2.78,yy,zz,.08,.75,1,mats.yellow,scene,false);if(label)sign(label,cx+side*8.3,3.5,z,'#33466b','#fff',3.6)}
+function roadSegment(mapId,cx,z1,z2,width,material=mats.road){for(let z=z1;z<z2;z+=4)addPlatform(mapId,cx,0,z+2,width,1,4,material,{cast:false})}
+// 체크포인트 표식을 도로 위 대형 간판 대신 낮은 바닥선과 측면 표지판으로 표시
+function checkpointGate(cx,z,text,color){const m=mat(color);cube(cx-6.15,1.0,z,.28,2,.28,m,scene,false);cube(cx+6.15,1.0,z,.28,2,.28,m,scene,false);cube(cx,.535,z,11.7,.07,.24,m,scene,false);sign(`✓ ${text}`,cx+7.65,2.15,z+1.0,`#${color.toString(16).padStart(6,'0')}`,'#19222b',2.8)}
+function goodsStore(mapId,cx,z,title,c1,c2){addPlatform(mapId,cx,0,z,15,1,14,mats.stone,{cast:false});cube(cx,3.8,z+5,15,7.6,1.1,mat(c1));cube(cx-7,2.4,z,1.1,4.8,10,mat(c1));cube(cx+7,2.4,z,1.1,4.8,10,mat(c1));cube(cx,6.5,z,15,1,10,mat(c2));cube(cx,3.2,z+4.25,7.8,4.8,.3,mats.portal);sign(title,cx,7.4,z+4.25,`#${c1.toString(16).padStart(6,'0')}`,'#fff',6.8);sign('LIMITED GOODS',cx,5.8,z+4.1,`#${c2.toString(16).padStart(6,'0')}`,'#111',4.8)}
+function addCrowd(mapId,cx,xOffset,z,color,amp=4,speed=1.1,phase=0){const p=addHazard(mapId,cx+xOffset,1.35,z,.82,1.75,.72,mat(color),{moving:{axis:'x',amp,speed,phase}});cube(0,1.2,0,.68,.68,.68,mat(0xe2aa83),p.mesh,true);cube(-.2,-1.15,0,.24,.62,.34,mats.dark,p.mesh,true);cube(.2,-1.15,0,.24,.62,.34,mats.dark,p.mesh,true)}
+function addDenseCrowd(mapId,cx,segments,count,palette){const lanes=[-4.4,-2.2,0,2.2,4.4];const perSegment=Math.ceil(count/segments.length);for(let i=0;i<count;i++){const seg=segments[i%segments.length];const row=Math.floor(i/segments.length);const t=(row+.5)/perSegment;const z=THREE.MathUtils.lerp(seg[0],seg[1],Math.min(.985,t));const lane=lanes[(i*3+row)%lanes.length];const color=palette[(i+row)%palette.length];const amp=1.15+((i*7)%5)*.24;const speed=.72+((i*11)%7)*.08;addCrowd(mapId,cx,lane,z,color,amp,speed,i*.61)}}
+// 바르셀로나 전용 인파: 좌·중앙·우에 항상 고르게 분포하고, 행마다 통과 가능한 빈 차선이 달라진다.
+function addBarcelonaCrowd(mapId,cx){
+  const palette=[0xc94b49,0xe0b23a,0x426fb4,0x54a36a,0xb565a7,0x3f9d93,0xe67e45];
+  const lanes=[-5.25,-3.5,-1.75,0,1.75,3.5,5.25];
+  const sections=[
+    {from:8,to:92,rows:17,peoplePerRow:5},
+    {from:304,to:388,rows:14,peoplePerRow:4},
+    {from:402,to:448,rows:9,peoplePerRow:4}
+  ];
+  let n=0;
+  for(const section of sections){
+    for(let row=0;row<section.rows;row++){
+      const z=THREE.MathUtils.lerp(section.from,section.to,(row+.45)/section.rows);
+      const gaps=[row%7,(row+3)%7];
+      let placed=0;
+      for(let li=0;li<lanes.length&&placed<section.peoplePerRow;li++){
+        if(gaps.includes(li))continue;
+        const laneIndex=(li+row*2)%lanes.length;
+        if(gaps.includes(laneIndex))continue;
+        const phase=(laneIndex%2===0?0:Math.PI)+row*.37;
+        const amp=.48+(n%4)*.13;
+        const speed=.78+(n%5)*.08;
+        addCrowd(mapId,cx,lanes[laneIndex],z+(placed%2)*.38,palette[n%palette.length],amp,speed,phase);
+        placed++;n++;
+      }
+    }
+  }
+}
+
+function buildTokyo(){const id=1,C=0;roadSegment(id,C,-8,76,12,mat(0x444d58));roadSegment(id,C,76,136,12,mat(0x4a5158));roadSegment(id,C,214,272,12,mat(0x3d4651));roadSegment(id,C,272,330,12,mat(0x444d58));for(let z=8,i=0;z<315;z+=20,i++){building(C,-1,z,[0x64738a,0x835e86,0x4f7587][i%3],i%2?'TOKYO':'SHOP');building(C,1,z+8,[0x6f8296,0x916c79,0x52798a][(i+1)%3],i%3===0?'POP-UP':'')}
+  [22,59,102,232,279,302].forEach((z,i)=>addCrowd(id,C,(i%3-1)*2.5,z,[0x3f7fdb,0xe05a65,0x51a36b,0xe9ad39][i%4],4.2,1.05+i%3*.15,i));
+  addDenseCrowd(id,C,[[6,132],[220,320]],54,[0x3f7fdb,0xe05a65,0x51a36b,0xe9ad39,0x8e63c5,0x3fa7a0]);
+  // 환승 계단: 블록 등반
+  // 계단에서 떨어져도 안전하게 리스폰할 수 있도록 계단 시작 전 넓은 세이브 발판을 둔다.
+  addPlatform(id,C,0,134,11,1,8,mats.stone,{cast:false});
+  for(let i=0;i<8;i++){const y=.35+i*.45,z=139+i*4.0;addPlatform(id,C,y,z,9,1,2.8,i%2?mats.stone:mats.stone2);if(i%2===0)addStar(id,C+(i%4===0?-2:2),y+1.2,z)}
+  addPlatform(id,C,3.5,171,9,1,8,mats.stone);for(let i=0;i<4;i++){const p=addPlatform(id,C+(i%2?-2.2:2.2),2.2,184+i*8,4.2,1,4,mats.blue,{moving:{axis:'x',amp:2.8,speed:1.25+i*.08,phase:i}});addStar(id,p.x,3.4,p.z)}
+  roadSegment(id,C,208,218,10,mats.stone);
+  [244,262,286].forEach((z,i)=>addRoller(id,C+(i%2?-2.6:2.6),z+22,z-12,1.7,1.25,8.0+i*.6,i*.8,mat(i%2?0xd64b58:0x344d70)));
+  [35,113,226,296].forEach((z,i)=>addStar(id,C+(i%2?-3:3),1.6,z));addPickpocket(id,C,94,3.8,0);addPickpocket(id,C,238,4.2,2.4);
+  MAPS[id].checkpoints.slice(1).forEach(cp=>checkpointGate(C,cp.z,['시부야 교차로','도쿄역 환승 계단','오다이바 전철','긴자 가방 거리'][MAPS[id].checkpoints.indexOf(cp)-1],0xffd84a));goodsStore(id,C,326,'TOKYO GOODS',0xd93678,0xffd84a)}
+function buildBangkok(){const id=2,C=140;
+  roadSegment(id,C,-8,112,12,mat(0x765d51));roadSegment(id,C,292,392,12,mat(0x75594d));
+  for(let z=6,i=0;z<386;z+=18,i++){const side=i%2?-1:1,x=C+side*8.4;cube(x,1.0,z,3.4,1.2,4.5,mats.wood);cube(x,3,z,4.1,.35,5.2,i%3===0?mats.red:i%3===1?mats.yellow:mats.green);if(i%4===0)sign(i<7?'KHAO SAN':'BANGKOK',C+side*8.0,4.2,z,'#d44d35','#fff3c4',3.4)}
+  addDenseCrowd(id,C,[[6,104],[300,380]],63,[0xee6a4e,0x3f9a82,0x6d7dd5,0xd6a43c,0x9a5fc7,0x4f8bb5]);
+  [22,72,316,368].forEach((z,i)=>addCrowd(id,C,(i%3-1)*2.5,z,[0xee6a4e,0x3f9a82,0x6d7dd5,0xd6a43c][i%4],4.2,1.0+i%3*.13,i));
+  // 코스 절반 이상을 물 위 이동으로 구성한다.
+  cube(C,-.85,202,27,.45,184,mats.water,scene,false);
+  addPlatform(id,C,0,108,12,1,12,mats.wood,{cast:false});
+  // 담넌사두억 수상시장: 넓은 가판 보트 사이를 건넌다.
+  for(let i=0;i<10;i++){const z=119+i*6.0;const side=i%2?-1:1;const p=addPlatform(id,C+side*1.8,.1,z,5.6,1,5.0,i%3===0?mats.sand:mats.wood,{moving:{axis:'x',amp:1.7,speed:.68+i*.025,phase:i*.72}});cube(p.x,1.05,z,2.6,.55,2.0,i%2?mats.red:mats.yellow,scene,false);if(i<9)addStar(id,p.x,1.75,z)}
+  addPlatform(id,C,0,174,12,1,9,mats.wood,{cast:false});
+  // 짜오프라야 강: 앞뒤로 움직이는 긴 보트와 좌우 보트가 교차한다.
+  for(let i=0;i<8;i++){const z=184+i*8.0;const side=i%2?-1:1;const axis=i%3===0?'z':'x';const p=addPlatform(id,C+side*2.1,.05,z,6.0,1,5.2,i%2?mats.blue:mats.wood,{moving:{axis,amp:axis==='z'?2.0:2.2,speed:.75+i*.035,phase:i*.8}});cube(p.x,.92,p.z,4.2,.38,2.6,i%2?mats.yellow:mats.red,scene,false);addStar(id,p.x,1.7,p.z)}
+  addPlatform(id,C,0,248,12,1,9,mats.wood,{cast:false});
+  // 왓아룬 선착장: 좁은 부교와 옆에서 가로지르는 모터보트.
+  for(let i=0;i<7;i++){const x=C+(i%2?-2.3:2.3),z=258+i*5.2;addPlatform(id,x,.05,z,4.4,1,3.6,mats.wood,{moving:{axis:'y',amp:.32,speed:1.15,phase:i}});if(i%2===0)addStar(id,x,1.55,z)}
+  [264,278,289].forEach((z,i)=>addHazard(id,C+(i%2?-8:8),1.25,z,4.2,1.1,1.9,i%2?mats.red:mats.blue,{moving:{axis:'x',amp:8.5,speed:1.05+i*.18,phase:i*1.3}}));
+  addPlatform(id,C,0,300,13,1,12,mats.stone,{cast:false});
+  // 왓아룬 계단과 아이콘시암 진입로.
+  for(let i=0;i<6;i++){const y=.25+i*.38,z=310+i*5.0;addPlatform(id,C,y,z,9-i*.35,1,3.2,i%2?mats.sand:mats.stone);if(i<5)addStar(id,C+(i%2?-2.2:2.2),y+1.3,z)}
+  [346,367].forEach((z,i)=>addRoller(id,C+(i%2?-2.8:2.8),z+18,z-10,1.8,1.35,7.5+i*.7,i*.8,mat(0x5d8e2f)));
+  [34,89,304,376].forEach((z,i)=>addStar(id,C+(i%2?-3.2:3.2),1.6,z));addPickpocket(id,C,88,4.1,.8);addPickpocket(id,C,309,4.4,2.6);
+  MAPS[id].checkpoints.slice(1).forEach((cp,i)=>checkpointGate(C,cp.z,['담넌사두억 수상시장','짜오프라야 보트','왓아룬 선착장','아이콘시암'][i],0xffa62b));goodsStore(id,C,388,'ICONSIAM GOODS',0xe34f32,0xffc928)}
+function buildFinland(){const id=3,C=280;
+  roadSegment(id,C,-8,86,12,mats.snow);roadSegment(id,C,86,162,12,mats.ice);roadSegment(id,C,246,330,11,mats.iceDark);roadSegment(id,C,330,402,12,mats.snow);
+  for(let z=7,i=0;z<392;z+=19,i++){building(C,i%2?-1:1,z,[0xbfd7e5,0xe1eaf0,0x9fc7d9][i%3],i%4===0?'HELSINKI':'');const side=i%2?-1:1;cube(C+side*8.4,1.5,z+5,.45,3,.45,mats.white);cube(C+side*8.4,3.25,z+5,1.5,.35,1.5,mats.ice,scene,false)}
+  addDenseCrowd(id,C,[[8,78],[332,390]],49,[0x4f76a8,0xb54f62,0x4c9576,0xd2a23e,0x7c69ae]);
+  // 에스플라나디 얼음거리: 방향을 놓아도 미끄러지는 연속 빙판.
+  [96,112,128,145].forEach((z,i)=>{addHazard(id,C+(i%2?-3.0:3.0),1.15,z,2.0,1.3,1.2,mats.iceDark,{moving:{axis:'x',amp:3.8,speed:1.0+i*.14,phase:i}});addStar(id,C+(i%2?2.8:-2.8),1.7,z+4)});
+  addPlatform(id,C,0,162,12,1,10,mats.snow,{cast:false});
+  // 수오멘린나 빙판 항로: 움직이는 빙하 조각을 건넌다.
+  cube(C,-.85,205,26,.4,90,mats.water,scene,false);
+  for(let i=0;i<10;i++){const z=171+i*7.2;const side=i%2?-1:1;const p=addPlatform(id,C+side*2.2,.08,z,5.0,1,4.6,i%2?mats.ice:mats.snow,{moving:{axis:i%3===0?'y':'x',amp:i%3===0?.65:2.0,speed:.82+i*.035,phase:i*.7}});addStar(id,p.x,1.65,p.z)}
+  addPlatform(id,C,0,248,12,1,10,mats.snow,{cast:false});
+  // 좁은 얼음 다리와 좌우로 움직이는 얼음벽.
+  for(let i=0;i<10;i++){const z=258+i*6.2,x=C+(i%3-1)*1.9;addPlatform(id,x,.05,z,4.5,1,4.1,mats.ice,{moving:i%2?{axis:'x',amp:1.35,speed:1.0+i*.04,phase:i}:null});if(i%2===0)addStar(id,x,1.6,z)}
+  addPlatform(id,C,0,326,12,1,10,mats.snow,{cast:false});
+  // 원로원광장: 거대한 눈덩이가 연속으로 굴러온다.
+  [344,359,374,389].forEach((z,i)=>addRoller(id,C+(i%2?-2.7:2.7),z+20,z-12,1.75,1.45,8.5+i*.45,i*.75,mats.snow));
+  [30,76,252,335,392].forEach((z,i)=>addStar(id,C+(i%2?-3.1:3.1),1.7,z));addPickpocket(id,C,67,4.1,1.1);addPickpocket(id,C,318,4.4,2.7);
+  MAPS[id].checkpoints.slice(1).forEach((cp,i)=>checkpointGate(C,cp.z,['헬싱키 마켓 광장','에스플라나디 얼음거리','수오멘린나 항로','원로원광장'][i],0x79dfff));goodsStore(id,C,398,'HELSINKI AURORA GOODS',0x3673a5,0xbaf5ff)}
+function buildBarcelona(){const id=4,C=420;
+  roadSegment(id,C,-8,100,13,mat(0x9e8974));roadSegment(id,C,292,398,13,mat(0x9d8770));roadSegment(id,C,398,462,10,mat(0x6f625a));
+  for(let z=10,i=0;z<450;z+=20,i++){building(C,i%2?-1:1,z,[0xe3ae68,0xd47a68,0xe3ca8e][i%3],i%4===0?'BARCELONA':'');const x=C+(i%2?8.2:-8.2);cube(x,.9,z+6,2.2,.3,2.2,mats.wood);cube(x,2,z+6,.25,2.1,.25,mats.dark)}
+
+  // 람블라스 인파 미로: 좌·중앙·우에 고르게 배치되고, 빈 차선이 행마다 바뀐다.
+  addBarcelonaCrowd(id,C);
+  // 시작부터 좌우를 가로지르는 관광버스와 노점 카트를 추가한다.
+  [18,31,45,60,76,89].forEach((z,i)=>addHazard(id,C+(i%2?-8.2:8.2),1.25,z,4.0,1.25,1.7,i%2?mats.red:mats.blue,{moving:{axis:'x',amp:8.4,speed:1.25+i*.09,phase:i*Math.PI*.43}}));
+  addPickpocket(id,C-2.8,54,3.0,.4);addPickpocket(id,C+2.8,87,3.4,2.2);
+
+  // 구엘 공원: 체크포인트는 넓은 고정 발판 위에 생성한다.
+  addPlatform(id,C,0,96,13,1,11,mats.stone,{cast:false});
+  for(let i=0;i<14;i++){
+    const z=105+i*6.35,x=C+([-3.7,-.8,3.4,1.5,-2.9,2.8][i%6]);
+    const y=.38+i*.30;
+    const moving=i>2&&i%3===1?{axis:'x',amp:1.25,speed:1.08+i*.045,phase:i*.63}:null;
+    addPlatform(id,x,y,z,3.0+(i%4===0?.45:0),1,3.15,i%2?mats.sand:mats.stone,{moving});
+    if(i%2===0)addStar(id,x,y+1.42,z);
+    if(i===5||i===10)addLaserProjectile(id,C,z+2.7,1.0,i*.8,9.5+i*.15,i%2===0);
+  }
+  // 구엘공원 세이브포인트: 발판 상단 4.75, 플레이어 중심 5.65.
+  addPlatform(id,C,4.25,194,13,1,12,mats.stone,{cast:false});
+  cube(C-5.2,6.0,194,.5,3.0,.5,mats.yellow,scene,false);cube(C+5.2,6.0,194,.5,3.0,.5,mats.yellow,scene,false);
+
+  // 사그라다 파밀리아 공중 발판: 작고 빠른 좌우/상하 발판과 교차 레이저.
+  for(let i=0;i<14;i++){
+    const z=202+i*6.55,side=i%2?-1:1,axis=i%3===0?'y':'x';
+    const p=addPlatform(id,C+side*2.85,3.0,z,3.15,1,3.25,i%2?mats.red:mats.yellow,{moving:{axis,amp:axis==='y'?1.5:3.35,speed:1.28+i*.072,phase:i*.91}});
+    if(i<13&&i%2===0)addStar(id,p.x,4.5,p.z);
+    if(i===3||i===7||i===11)addLaserProjectile(id,C,z+2.8,1.02,i*.55,10.4+i*.22,i%2===0);
+  }
+  addPlatform(id,C,0,300,13,1,11,mat(0x9d8770),{cast:false});
+
+  // 캄 노우 이중 레이저 광장: 낮은 레이저는 점프, 높은 레이저는 점프하지 않아야 피할 수 있다.
+  for(let i=0;i<18;i++){
+    const z=307+i*4.85;
+    const low=i%3!==1;
+    addLaserProjectile(id,C,z,low?1.02:2.48,i*.37,10.5+i*.28,i%2===0);
+    if(i%4===0)addStar(id,C+(i%2?-3.25:3.25),1.7,z+1.8);
+  }
+  [319,337,354,372,390,404].forEach((z,i)=>addRoller(id,C+(i%2?-3.15:3.15),z+22,z-11,1.75,1.42,9.8+i*.58,i*.52,mats.black));
+  // 이동식 골대 벽까지 추가하여 레이저와 공을 동시에 피하게 한다.
+  [323,346,369,388].forEach((z,i)=>addHazard(id,C+(i%2?-5.4:5.4),1.55,z,2.5,2.2,1.0,i%2?mats.white:mats.blue,{moving:{axis:'x',amp:5.5,speed:1.55+i*.11,phase:i*.9}}));
+  addPlatform(id,C,0,394,12,1,11,mats.stone,{cast:false});
+
+  // 고딕 지구 최종 탈출: 좁은 발판, 빠른 이동 벽, 저·고 레이저가 연속 등장한다.
+  for(let i=0;i<9;i++){
+    const z=403+i*5.55;
+    const x=C+(i%2?-2.05:2.05);
+    addPlatform(id,x,.05,z,4.35,1,3.55,i%2?mats.stone2:mats.stone,{moving:i%3===2?{axis:'x',amp:1.25,speed:1.25+i*.05,phase:i}:null});
+    addHazard(id,C+(i%2?-5.7:5.7),1.4,z,2.65,2.0,1.0,i%2?mats.red:mats.blue,{moving:{axis:'x',amp:5.7,speed:1.55+i*.095,phase:i*.83}});
+    addLaserProjectile(id,C,z+2.2,i%3===1?2.48:1.04,i*.63,11.2+i*.25,i%2!==0);
+    if(i<7&&i%2===0)addStar(id,x,1.65,z);
+  }
+  addPickpocket(id,C,306,4.8,3.1);addPickpocket(id,C,365,4.6,1.8);addPickpocket(id,C,420,4.2,4.7);addPickpocket(id,C,444,3.5,2.2);
+  [42,92,196,302,447].forEach((z,i)=>addStar(id,C+(i%2?-3.6:3.6),1.7,z));
+  MAPS[id].checkpoints.slice(1).forEach((cp,i)=>checkpointGate(C,cp.z,['람블라스 인파 미로','구엘 공원 안전무대','사그라다 파밀리아','캄 노우 이중 레이저'][i],0xf05252));
+  goodsStore(id,C,458,'GOTHIC QUARTER GOODS',0x3157a5,0xf2c533)
+}
+buildTokyo();buildBangkok();buildFinland();buildBarcelona();
+
+const playerGroup=new THREE.Group();scene.add(playerGroup);let body,head,legL,legR,powerAura;
+function buildPlayerVisual(){while(playerGroup.children.length)playerGroup.remove(playerGroup.children[0]);const c=CHARACTERS[game.character];body=cube(0,.12,0,c.bodyW,c.bodyH,c.bodyD,mat(c.body),playerGroup,true);head=cube(0,1.0,0,c.head,c.head,c.head,mat(c.skin),playerGroup,true);cube(0,1.34,-.03,c.head+.05,.17,c.head+.05,mat(c.hair),playerGroup,true);legL=cube(-c.bodyW*.22,-.72,0,c.bodyW*.28,.66,c.bodyD*.55,mat(c.pants),playerGroup,true);legR=cube(c.bodyW*.22,-.72,0,c.bodyW*.28,.66,c.bodyD*.55,mat(c.pants),playerGroup,true);powerAura=new THREE.Mesh(new THREE.SphereGeometry(1.25,20,14),new THREE.MeshBasicMaterial({color:0xfff06a,transparent:true,opacity:.18,wireframe:true}));powerAura.position.y=.15;powerAura.visible=false;playerGroup.add(powerAura)}
+const shadow=new THREE.Mesh(new THREE.CircleGeometry(.65,20),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.24,depthWrite:false}));shadow.rotation.x=-Math.PI/2;scene.add(shadow);
+
+const game={state:'menu',mapId:1,character:'brody',nickname:'러너',timeLimit:75,startTime:0,elapsed:0,remaining:75,falls:0,hits:0,escapes:0,totalStars:0,starCharge:0,powerCount:0,powerUntil:0,vy:0,speed:0,targetSpeed:0,lateralVelocity:0,grounded:false,riding:null,currentCheckpoint:0,hitUntil:0,respawnUntil:0,lastSuccess:false,pickTarget:null,pickTaps:0,pickNeed:0,pickEnd:0};
+const input={left:false,right:false,up:false,down:false,joyX:0,joyY:0};const clock=new THREE.Clock();buildPlayerVisual();
+function activeMap(){return MAPS[game.mapId]}function activeChar(){return CHARACTERS[game.character]}
+function formatCountdown(t){const s=Math.max(0,t),m=Math.floor(s/60),sec=(s-m*60).toFixed(1).padStart(4,'0');return `${String(m).padStart(2,'0')}:${sec}`}
+function showToast(text){ui.toast.textContent=text;ui.toast.classList.add('show');clearTimeout(showToast.t);showToast.t=setTimeout(()=>ui.toast.classList.remove('show'),1300)}
+function getRecords(mapId=game.mapId){try{return JSON.parse(localStorage.getItem(SAVE_KEYS[mapId])||'[]')}catch{return []}}
+function isUnlocked(id){return id>=1&&id<=4}
+function saveRecord(name,remaining,mapId=game.mapId,character=activeChar().name){const previous=getRecords(mapId).filter(r=>r&&r.name);const old=previous.find(r=>r.name===name);const entry={name,remaining:Number(remaining.toFixed(1)),character,date:Date.now()};const merged=previous.filter(r=>r.name!==name);merged.push(old&&Number(old.remaining)>entry.remaining?old:entry);merged.sort((a,b)=>Number(b.remaining)-Number(a.remaining));const records=merged.slice(0,5);localStorage.setItem(SAVE_KEYS[mapId],JSON.stringify(records));return {records,rank:records.findIndex(r=>r.name===name)+1}}
+function renderRanking(el,records=getRecords()){el.innerHTML='';if(!records.length){el.innerHTML='<li>아직 기록이 없습니다.</li>';return}records.forEach((r,i)=>{const li=document.createElement('li');li.innerHTML=`<span class="record"><b>${r.name} · ${r.character||'-'}</b><em>${formatCountdown(Number(r.remaining))}</em></span>`;el.appendChild(li)})}
+async function fetchFirebaseRecords(mapId){
+  if(!(await firebaseReady))return null;
+  try{
+    const rankingQuery=query(
+      collection(firebaseDb,'pkdcRankings',String(mapId),'scores'),
+      orderBy('remaining','desc'),
+      limit(5)
+    );
+    const snapshot=await getDocs(rankingQuery);
+    return snapshot.docs.map(s=>{
+      const data=s.data();
+      return {uid:data.uid||s.id,name:data.nickname||'러너',character:data.character||'-',remaining:Number(data.remaining)||0};
+    });
+  }catch(error){
+    firebaseOffline=true;
+    console.warn('Firebase 랭킹 조회 실패. 로컬 랭킹을 표시합니다.',error);
+    return null;
+  }
+}
+async function loadFirebaseRanking(mapId,el){
+  const records=await fetchFirebaseRecords(mapId);
+  if(records&&((el===ui.rankList&&game.mapId===mapId)||el===ui.resultRankList))renderRanking(el,records);
+  return records;
+}
+async function saveFirebaseRecord(name,remaining,mapId,character){
+  if(!(await firebaseReady))return null;
+  const user=firebaseUser||firebaseAuth.currentUser;
+  if(!user)return null;
+  try{
+    const recordRef=doc(firebaseDb,'pkdcRankings',String(mapId),'scores',user.uid);
+    const oldSnapshot=await getDoc(recordRef);
+    const rounded=Number(remaining.toFixed(1));
+    const oldRemaining=oldSnapshot.exists()?Number(oldSnapshot.data().remaining):-1;
+    if(!oldSnapshot.exists()||rounded>=oldRemaining){
+      await setDoc(recordRef,{
+        uid:user.uid,
+        nickname:name,
+        character,
+        remaining:rounded,
+        updatedAt:serverTimestamp()
+      });
+    }
+    const records=await fetchFirebaseRecords(mapId);
+    if(!records)return null;
+    return {records,rank:records.findIndex(r=>r.uid===user.uid)+1};
+  }catch(error){
+    firebaseOffline=true;
+    console.warn('Firebase 랭킹 저장 실패. 로컬 기록만 저장합니다.',error);
+    return null;
+  }
+}
+function refreshUnlock(){[2,3,4].forEach(id=>{const btn=ui[`stage${id}`],badge=ui[`badge${id}`];btn.classList.remove('locked');btn.disabled=false;badge.textContent=`✅ STAGE ${id}`});ui.unlockGuide.innerHTML='🧪 테스트 모드: <b>도쿄·방콕·핀란드·바르셀로나</b>가 모두 열려 있습니다.'}
+function selectStage(id){if(!isUnlocked(id)){showToast('이전 스테이지를 먼저 성공하세요.');return}game.mapId=id;const m=activeMap();game.timeLimit=m.timeLimit;game.remaining=m.timeLimit;[1,2,3,4].forEach(n=>ui[`stage${n}`].classList.toggle('selected',n===id));ui.menuSubtitle.textContent=`STAGE ${id} · ${m.city} · 제한시간 ${m.timeLimit}초`;ui.course.innerHTML=m.preview.map(v=>`<span>${v}</span>`).join('');ui.startBtn.textContent=`${m.city} 굿즈런 시작`;ui.rankTitle.textContent=`🏆 ${m.city} TOP 5 · 남은 시간 순`;renderRanking(ui.rankList,getRecords(id));loadFirebaseRanking(id,ui.rankList);scene.background=new THREE.Color(m.sky);scene.fog.color.setHex(m.fog);resetPlayer()}
+function selectCharacter(id){game.character=id;ui.brodyCard.classList.toggle('selected',id==='brody');ui.noahCard.classList.toggle('selected',id==='noah');buildPlayerVisual();resetPlayer()}
+function resetCollectibles(){stars.forEach(s=>{if(s.mapId===game.mapId){s.collected=false;s.mesh.visible=true}});pickpockets.forEach(p=>{if(p.mapId===game.mapId){p.active=true;p.mesh.visible=true}})}
+function resetPlayer(){const cp=activeMap().checkpoints[game.currentCheckpoint]||activeMap().checkpoints[0];playerGroup.position.set(cp.x,cp.y,cp.z);game.vy=0;game.speed=0;game.lateralVelocity=0;game.grounded=false;game.riding=null;game.respawnUntil=performance.now()+1200}
+function startGame(){const m=activeMap();game.nickname=(ui.nickname.value.trim()||'러너').slice(0,12);localStorage.setItem('pkdcTravelNicknameV1',game.nickname);game.state='countdown';game.timeLimit=m.timeLimit;game.remaining=m.timeLimit;game.elapsed=0;game.falls=0;game.hits=0;game.escapes=0;game.totalStars=0;game.starCharge=0;game.powerCount=0;game.powerUntil=0;game.currentCheckpoint=0;game.hitUntil=0;game.lastSuccess=false;resetCollectibles();resetPlayer();ui.menu.classList.add('hidden');ui.result.classList.add('hidden');ui.hud.classList.remove('hidden');document.getElementById('mobileControls').classList.remove('hidden');ui.pick.classList.add('hidden');ui.actionBtn.textContent='JUMP';ui.actionBtn.classList.remove('pick');ui.hudCharacter.textContent=activeChar().name;ui.hits.textContent='0';ui.falls.textContent='0';ui.escapes.textContent='0';ui.message.textContent='3';game.countdownEnd=performance.now()+3200}
+function goMenu(){game.state='menu';game.speed=0;input.left=input.right=input.up=input.down=false;input.joyX=input.joyY=0;ui.hud.classList.add('hidden');ui.result.classList.add('hidden');ui.pick.classList.add('hidden');ui.menu.classList.remove('hidden');document.getElementById('mobileControls').classList.add('hidden');refreshUnlock();selectStage(game.mapId)}
+function tryJump(){if(game.state==='pickpocket'){pickTap();return}if(game.state==='playing'&&game.grounded){game.vy=activeChar().jump;game.grounded=false;game.riding=null}}
+function pickTap(){if(game.state!=='pickpocket')return;game.pickTaps++;ui.pickTap.textContent=`${game.pickTaps} / ${game.pickNeed}`;ui.pickFill.style.width=`${Math.min(100,game.pickTaps/game.pickNeed*100)}%`;if(game.pickTaps>=game.pickNeed){game.state='playing';game.escapes++;ui.escapes.textContent=game.escapes;game.pickTarget.active=false;game.pickTarget.mesh.visible=false;ui.pick.classList.add('hidden');ui.actionBtn.textContent='JUMP';ui.actionBtn.classList.remove('pick');game.hitUntil=performance.now()+700;showToast('소매치기를 떼어냈습니다!')}}
+function startPickpocket(p,now){if(game.state!=='playing'||!p.active)return;game.state='pickpocket';game.pickTarget=p;game.pickTaps=0;game.pickNeed=activeChar().pickTaps;game.pickEnd=now+4000;game.speed=0;ui.pick.classList.remove('hidden');ui.pickTap.textContent=`0 / ${game.pickNeed}`;ui.pickFill.style.width='0%';ui.pickTimer.textContent='4.0';ui.actionBtn.textContent='연타!';ui.actionBtn.classList.add('pick')}
+function failGame(reason='시간 초과'){if(!['playing','pickpocket'].includes(game.state))return;game.state='failed';game.speed=0;game.remaining=Math.max(0,game.timeLimit-game.elapsed);ui.pick.classList.add('hidden');document.getElementById('mobileControls').classList.add('hidden');ui.resultTitle.textContent='굿즈 구매 실패!';ui.resultMap.textContent=`STAGE ${game.mapId} · ${activeMap().city} · ${reason}`;ui.resultTime.textContent=reason==='시간 초과'?'남은 시간 00:00.0':`남은 시간 ${formatCountdown(game.remaining)}`;ui.resultGuide.innerHTML=reason.includes('소매치기')?'💸 소매치기를 제시간에 떼어내지 못해 여행 경비를 잃었습니다.':'⏰ 제한시간 안에 굿즈 판매점에 도착하지 못했습니다.';showResult(0)}
+async function finishGame(){if(game.state!=='playing')return;game.state='finished';game.lastSuccess=true;game.speed=0;game.remaining=Math.max(0,game.timeLimit-game.elapsed);const completedMapId=game.mapId,completedCharacter=activeChar().name,completedName=game.nickname,completedRemaining=game.remaining;const localSave=saveRecord(completedName,completedRemaining,completedMapId,completedCharacter);if(completedMapId<4)localStorage.setItem(UNLOCK_KEYS[completedMapId+1],'true');refreshUnlock();document.getElementById('mobileControls').classList.add('hidden');ui.resultTitle.textContent='굿즈 구매 성공!';ui.resultMap.textContent=`STAGE ${completedMapId} · ${MAPS[completedMapId].city} · ${MAPS[completedMapId].name}`;ui.resultTime.textContent=`남은 시간 ${formatCountdown(completedRemaining)}`;ui.resultGuide.innerHTML=completedMapId<4?`🎉 다음 여행지 <b>${MAPS[completedMapId+1].city}</b>가 열렸습니다!`:'🌍 네 여행지의 한정 굿즈를 모두 구매했습니다!';showResult(localSave.rank);ui.resultRank.textContent='등록 중…';const onlineSave=await saveFirebaseRecord(completedName,completedRemaining,completedMapId,completedCharacter);if(onlineSave){renderRanking(ui.resultRankList,onlineSave.records);if(game.mapId===completedMapId)renderRanking(ui.rankList,onlineSave.records);ui.resultRank.textContent=onlineSave.rank?`${onlineSave.rank}위`:'TOP 5 밖'}else{ui.resultRank.textContent=localSave.rank?`${localSave.rank}위 (기기)`:'등록 없음';showToast('Firebase 연결 실패 · 기기에만 저장됨')}}
+function showResult(rank){ui.resultStars.textContent=`${game.totalStars}개`;ui.resultPowers.textContent=`${game.powerCount}회`;ui.resultMistakes.textContent=`${game.hits+game.falls}회`;ui.resultRank.textContent=rank?`${rank}위`:'등록 없음';ui.resultRankTitle.textContent=`🏆 ${activeMap().city} TOP 5`;renderRanking(ui.resultRankList,getRecords());document.getElementById('retryBtn').textContent=game.lastSuccess&&game.mapId<4?'다음 스테이지':'같은 스테이지 재도전';setTimeout(()=>ui.result.classList.remove('hidden'),350)}
+function obstaclePenalty(z,now,label='장애물 충돌'){game.hits++;ui.hits.textContent=game.hits;game.startTime-=activeChar().collisionPenalty*1000;game.hitUntil=now+850;let cp=0;activeMap().checkpoints.forEach((c,i)=>{if(c.z<z-.3)cp=i});game.currentCheckpoint=cp;showToast(`${label}! 체크포인트 복귀 · 시간 -${activeChar().collisionPenalty.toFixed(1)}초`);resetPlayer()}
+function fallPenalty(){game.falls++;ui.falls.textContent=game.falls;game.startTime-=2.0*1000;showToast('낙하! 체크포인트 복귀 · 시간 -2초');resetPlayer()}
+function playerBox(){const c=activeChar();return {minX:playerGroup.position.x-c.halfX,maxX:playerGroup.position.x+c.halfX,minY:playerGroup.position.y-.82,maxY:playerGroup.position.y+.82,minZ:playerGroup.position.z-c.halfZ,maxZ:playerGroup.position.z+c.halfZ}}
+function objectBox(o){return {minX:o.x-o.w/2,maxX:o.x+o.w/2,minY:o.y-o.h/2,maxY:o.y+o.h/2,minZ:o.z-o.d/2,maxZ:o.z+o.d/2}}
+function overlap(a,b){return a.minX<b.maxX&&a.maxX>b.minX&&a.minY<b.maxY&&a.maxY>b.minY&&a.minZ<b.maxZ&&a.maxZ>b.minZ}
+function collectStar(s,now){s.collected=true;s.mesh.visible=false;game.totalStars++;game.starCharge++;if(game.starCharge>=STAR_GOAL){game.starCharge=0;game.powerCount++;game.powerUntil=now+POWER_DURATION;showToast('✨ 뻔쩍 실드! 6초 동안 모든 충돌과 소매치기를 방어!')}}
+function updateWorld(t,dt){platforms.forEach(p=>{p.delta.x=p.delta.y=p.delta.z=0;if(p.mapId!==game.mapId||!p.moving)return;const old={x:p.x,y:p.y,z:p.z},v=Math.sin(t*p.moving.speed+p.moving.phase)*p.moving.amp;p[p.moving.axis]=p.original[p.moving.axis]+v;p.mesh.position[p.moving.axis]=p[p.moving.axis];p.delta.x=p.x-old.x;p.delta.y=p.y-old.y;p.delta.z=p.z-old.z});hazards.forEach(h=>{if(h.mapId!==game.mapId||!h.moving)return;const v=Math.sin(t*h.moving.speed+h.moving.phase)*h.moving.amp;h[h.moving.axis]=h.original[h.moving.axis]+v;h.mesh.position[h.moving.axis]=h[h.moving.axis]});rollers.forEach(r=>{if(r.mapId!==game.mapId){r.mesh.visible=false;return}r.mesh.visible=true;const length=Math.abs(r.zStart-r.zEnd),cycle=length/r.speed+r.delay,local=(t%cycle);const progress=Math.min(1,local/(length/r.speed));r.z=THREE.MathUtils.lerp(r.zStart,r.zEnd,progress);r.mesh.position.set(r.x,r.y,r.z);r.mesh.rotation.x-=r.speed*dt/r.radius});lasers.forEach(l=>{if(l.mapId!==game.mapId){l.mesh.visible=false;return}l.mesh.visible=true;const span=20,travel=(t*l.speed+l.phase*4)%span;l.x=l.fromLeft?l.cx-10+travel:l.cx+10-travel;l.mesh.position.set(l.x,l.y,l.z);l.mesh.rotation.z+=dt*2.5});pickpockets.forEach(p=>{if(p.mapId!==game.mapId){p.mesh.visible=false;return}p.mesh.visible=p.active;const x=p.originalX+Math.sin(t*p.speed+p.phase)*p.amp;p.x=x;p.mesh.position.x=x});stars.forEach((s,i)=>{if(s.mapId===game.mapId&&!s.collected){s.mesh.rotation.y+=dt*2.8;s.mesh.rotation.x=Math.sin(t*2+i)*.35;s.mesh.position.y=s.y+Math.sin(t*3+i)*.12}})}
+function updatePlayer(dt,now){if(game.riding){playerGroup.position.x+=game.riding.delta.x;playerGroup.position.y+=game.riding.delta.y;playerGroup.position.z+=game.riding.delta.z}const c=activeChar(),power=now<game.powerUntil;let steer=(input.right?1:0)-(input.left?1:0)+input.joyX;steer=THREE.MathUtils.clamp(steer,-1,1);const forward=input.up||input.joyY<-.2,back=input.down||input.joyY>.2;if(forward)game.targetSpeed=c.speed;else if(back)game.targetSpeed=-c.speed*.52;else game.targetSpeed=0;const slippery=!!activeMap().slippery;game.speed=THREE.MathUtils.damp(game.speed,game.targetSpeed,slippery?(forward||back?2.25:1.15):(forward||back?6:9),dt);if(slippery){game.lateralVelocity+=(-steer*c.lateral*3.0)*dt;game.lateralVelocity*=Math.pow(.52,dt);game.lateralVelocity=THREE.MathUtils.clamp(game.lateralVelocity,-c.lateral*1.35,c.lateral*1.35);playerGroup.position.x+=game.lateralVelocity*dt}else{game.lateralVelocity=0;playerGroup.position.x-=steer*c.lateral*dt}playerGroup.position.z+=game.speed*dt;
+  const oldY=playerGroup.position.y;game.vy-=GRAVITY*dt;playerGroup.position.y+=game.vy*dt;game.grounded=false;const oldFeet=oldY-.9,newFeet=playerGroup.position.y-.9;let top=-Infinity,standing=null;for(const p of platforms){if(p.mapId!==game.mapId||!p.mesh.visible)continue;const pt=p.y+p.h/2;if(playerGroup.position.x+c.halfX>p.x-p.w/2&&playerGroup.position.x-c.halfX<p.x+p.w/2&&playerGroup.position.z+c.halfZ>p.z-p.d/2&&playerGroup.position.z-c.halfZ<p.z+p.d/2&&game.vy<=0&&oldFeet>=pt-.2&&newFeet<=pt+.18&&pt>top){top=pt;standing=p}}if(standing){playerGroup.position.y=top+.9;game.vy=0;game.grounded=true;game.riding=standing}else game.riding=null;
+  if(now>game.hitUntil&&now>game.respawnUntil){const pb=playerBox();for(const p of pickpockets){if(p.mapId===game.mapId&&p.active&&overlap(pb,objectBox(p))){if(power){p.active=false;p.mesh.visible=false;game.hitUntil=now+650;showToast('✨ 뻔쩍 실드가 소매치기를 튕겨냈습니다!');return}startPickpocket(p,now);return}}for(const h of hazards){if(h.mapId===game.mapId&&overlap(pb,objectBox(h))){if(power){game.hitUntil=now+650;showToast('✨ 뻔쩍 실드가 충돌을 막았습니다!');return}obstaclePenalty(h.z,now,h.type==='crowd'?'사람과 충돌':'장애물 충돌');return}}for(const r of rollers){if(r.mapId===game.mapId&&overlap(pb,objectBox(r))){if(power){game.hitUntil=now+650;showToast('✨ 뻔쩍 실드가 굴러오는 물체를 막았습니다!');return}obstaclePenalty(r.z,now,'굴러오는 물체에 충돌');return}}for(const l of lasers){if(l.mapId===game.mapId&&overlap(pb,objectBox(l))){if(power){game.hitUntil=now+650;showToast('✨ 뻔쩍 실드가 레이저를 막았습니다!');return}obstaclePenalty(l.z,now,'레이저에 피격');return}}}
+  for(const s of stars){if(s.mapId===game.mapId&&!s.collected&&Math.hypot(playerGroup.position.x-s.x,playerGroup.position.y-s.mesh.position.y,playerGroup.position.z-s.z)<1.25)collectStar(s,now)}
+  for(let i=activeMap().checkpoints.length-1;i>game.currentCheckpoint;i--){if(playerGroup.position.z>=activeMap().checkpoints[i].z){game.currentCheckpoint=i;showToast('체크포인트!');break}}
+  if(playerGroup.position.y<-4||Math.abs(playerGroup.position.x-activeMap().centerX)>17){fallPenalty();return}if(playerGroup.position.z>=activeMap().finishZ&&Math.abs(playerGroup.position.x-activeMap().centerX)<6)finishGame();const run=Math.sin(performance.now()*.019*Math.max(1,Math.abs(game.speed)));legL.rotation.x=run*.72;legR.rotation.x=-run*.72;body.rotation.z=-steer*.07;powerAura.visible=power;powerAura.rotation.y+=dt*2.5}
+function updateCamera(dt){const target=new THREE.Vector3(playerGroup.position.x,playerGroup.position.y+4.1,playerGroup.position.z-9.4);camera.position.lerp(target,1-Math.exp(-7*dt));camera.lookAt(playerGroup.position.x,playerGroup.position.y+1,playerGroup.position.z+7);sun.position.set(playerGroup.position.x-24,48,playerGroup.position.z-24);sun.target.position.set(playerGroup.position.x,0,playerGroup.position.z+18);shadow.position.set(playerGroup.position.x,.53,playerGroup.position.z);shadow.material.opacity=THREE.MathUtils.clamp(.28-(playerGroup.position.y-1.4)*.045,.06,.28)}
+function updateHUD(now){const m=activeMap();ui.time.textContent=formatCountdown(game.remaining);ui.time.classList.toggle('danger',['playing','pickpocket'].includes(game.state)&&game.remaining<=10);ui.speed.textContent=game.speed.toFixed(1);ui.progress.style.width=`${Math.max(0,Math.min(100,playerGroup.position.z/m.totalZ*100))}%`;for(const s of m.sections){if(playerGroup.position.z<s[0]){ui.section.textContent=s[1];break}}ui.starCount.textContent=`⭐ ${game.starCharge}/${STAR_GOAL}`;ui.powerFill.style.width=`${game.starCharge/STAR_GOAL*100}%`;if(now<game.powerUntil){const sec=((game.powerUntil-now)/1000).toFixed(1);ui.powerState.textContent=`🛡️ 실드 ${sec}초`;ui.powerFill.style.width=`${Math.max(0,(game.powerUntil-now)/POWER_DURATION*100)}%`}else ui.powerState.textContent='실드 준비 중'}
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.035),now=performance.now(),t=now/1000;updateWorld(t,dt);if(game.state==='countdown'){const r=game.countdownEnd-now;if(r>2200)ui.message.textContent='3';else if(r>1200)ui.message.textContent='2';else if(r>200)ui.message.textContent='1';else{game.state='playing';game.startTime=now;ui.message.textContent='GO!';setTimeout(()=>{if(game.state==='playing')ui.message.textContent=''},550)}}else if(game.state==='playing'){game.elapsed=(now-game.startTime)/1000;game.remaining=Math.max(0,game.timeLimit-game.elapsed);if(game.remaining<=0)failGame('시간 초과');else updatePlayer(dt,now)}else if(game.state==='pickpocket'){game.elapsed=(now-game.startTime)/1000;game.remaining=Math.max(0,game.timeLimit-game.elapsed);const left=Math.max(0,(game.pickEnd-now)/1000);ui.pickTimer.textContent=left.toFixed(1);if(game.remaining<=0)failGame('시간 초과');else if(left<=0)failGame('소매치기 GAME OVER')}updateCamera(dt);updateHUD(now);renderer.render(scene,camera)}animate();
+
+window.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Space'].includes(e.code))e.preventDefault();if(e.code==='KeyA'||e.code==='ArrowLeft')input.left=true;if(e.code==='KeyD'||e.code==='ArrowRight')input.right=true;if(e.code==='KeyW'||e.code==='ArrowUp')input.up=true;if(e.code==='KeyS'||e.code==='ArrowDown')input.down=true;if(e.code==='Space'&&!e.repeat)tryJump()});window.addEventListener('keyup',e=>{if(e.code==='KeyA'||e.code==='ArrowLeft')input.left=false;if(e.code==='KeyD'||e.code==='ArrowRight')input.right=false;if(e.code==='KeyW'||e.code==='ArrowUp')input.up=false;if(e.code==='KeyS'||e.code==='ArrowDown')input.down=false});window.addEventListener('blur',()=>{input.left=input.right=input.up=input.down=false;input.joyX=input.joyY=0});window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+const base=document.getElementById('stickBase'),stick=document.getElementById('stick');let stickId=null;function setStick(e){const r=base.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,max=42,len=Math.hypot(dx,dy)||1;if(len>max){dx=dx/len*max;dy=dy/len*max}stick.style.transform=`translate(${dx}px,${dy}px)`;input.joyX=dx/max;input.joyY=dy/max}base.addEventListener('pointerdown',e=>{stickId=e.pointerId;base.setPointerCapture(stickId);setStick(e)});base.addEventListener('pointermove',e=>{if(e.pointerId===stickId)setStick(e)});function releaseStick(e){if(e.pointerId!==stickId)return;stickId=null;input.joyX=input.joyY=0;stick.style.transform='translate(0,0)'}base.addEventListener('pointerup',releaseStick);base.addEventListener('pointercancel',releaseStick);ui.actionBtn.addEventListener('pointerdown',e=>{e.preventDefault();tryJump()});
+ui.stage1.addEventListener('click',()=>selectStage(1));ui.stage2.addEventListener('click',()=>selectStage(2));ui.stage3.addEventListener('click',()=>selectStage(3));ui.stage4.addEventListener('click',()=>selectStage(4));ui.brodyCard.addEventListener('click',()=>selectCharacter('brody'));ui.noahCard.addEventListener('click',()=>selectCharacter('noah'));ui.startBtn.addEventListener('click',startGame);document.getElementById('restartBtn').addEventListener('click',startGame);document.getElementById('homeBtn').addEventListener('click',goMenu);document.getElementById('menuBtn').addEventListener('click',goMenu);document.getElementById('retryBtn').addEventListener('click',()=>{if(game.lastSuccess&&game.mapId<4)selectStage(game.mapId+1);startGame()});ui.nickname.addEventListener('keydown',e=>{if(e.key==='Enter')startGame()});
+ui.nickname.value=localStorage.getItem('pkdcTravelNicknameV1')||'러너';refreshUnlock();selectStage(1);selectCharacter('brody');firebaseReady.then(ok=>{if(ok){ui.unlockGuide.innerHTML+=' <span style="color:#71e89b">● 온라인 랭킹 연결됨</span>';loadFirebaseRanking(game.mapId,ui.rankList)}else{ui.unlockGuide.innerHTML+=' <span style="color:#ffd36a">● 로컬 랭킹 모드</span>'}});
+</script>
+</body>
+</html>
